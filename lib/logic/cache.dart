@@ -3,31 +3,45 @@ import 'package:kinkanutilapp/model/plan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Cache {
-  Future<String> getDefaultStartTimeValue() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('defaultStartTime') ?? '09:00';
+  static SharedPreferences _prefs;
+
+  Cache();
+
+  static Future<String> getDefaultStartTimeValue() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs.getString('defaultStartTime') ?? '09:00';
   }
 
-  Future<String> getDefaultEndTimeValue() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('defaultEndTime') ?? '17:30';
+  static Future<String> getDefaultEndTimeValue() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs.getString('defaultEndTime') ?? '17:30';
   }
 
-  Future<void> setDefaultStartTimeValue(DateTime dateTime) async {
+  static Future<void> setDefaultStartTimeValue(DateTime dateTime) async {
     var time = DateFormatConst.hourMinuet.format(dateTime);
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('defaultStartTime', time);
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setString('defaultStartTime', time);
   }
 
-  Future<void> setDefaultEndTimeValue(DateTime dateTime) async {
+  static Future<void> setDefaultEndTimeValue(DateTime dateTime) async {
     var time = DateFormatConst.hourMinuet.format(dateTime);
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('defaultEndTime', time);
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setString('defaultEndTime', time);
   }
 
-  Future<WorkState> getDefaultWorkStateValue() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var workStateName = prefs.getString('defaultWorkState');
+  static Future<WorkState> getDefaultWorkStateValue() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    var workStateName = _prefs.getString('defaultWorkState');
     var workState = WorkState.REMOTE;
     if (workStateName != null) {
       defaultWorkStateMap.forEach((key, value) {
@@ -39,21 +53,42 @@ class Cache {
     return workState;
   }
 
-  Future<void> setDefaultWorkStateValue(WorkState workState) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString(
+  static Future<void> setDefaultWorkStateValue(WorkState workState) async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setString(
         'defaultWorkState',
         defaultWorkStateMap[workState] ??
             defaultWorkStateMap[WorkState.REMOTE]);
   }
 
-  Future<bool> getIsTimeUnneeded() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isTimeUnneeded') ?? true;
+  static Future<String> getChannelMessageInfo() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs.getString('channelMessageInfo') ?? "";
   }
 
-  Future<void> setIsTimeUnneeded(bool isTimeUnneeded) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isTimeUnneeded', isTimeUnneeded);
+  static Future<void> setChannelMessageInfo(String channelMessageInfo) async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setString('channelMessageInfo', channelMessageInfo);
   }
+  static Future<bool> getIsTimeUnneeded() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs.getBool('isTimeUnneeded') ?? true;
+  }
+
+  static Future<void> setIsTimeUnneeded(bool isTimeUnneeded) async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setBool('isTimeUnneeded', isTimeUnneeded);
+  }
+
+
 }

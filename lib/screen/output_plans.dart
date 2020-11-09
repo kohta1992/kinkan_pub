@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:kinkanutilapp/group_const.dart';
+import 'package:kinkanutilapp/logic/cache.dart';
 import 'package:kinkanutilapp/logic/ms_graph.dart';
 import 'package:kinkanutilapp/model/plans.dart';
+import 'package:kinkanutilapp/screen/post_teams_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -24,6 +28,9 @@ class OutputPlans extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _OutlookButton(
+                isSmall: isSmall,
+              ),
+              _PostChannelButton(
                 isSmall: isSmall,
               ),
               _MailerOpenButton(
@@ -60,7 +67,7 @@ class _OutlookButtonState extends State<_OutlookButton> {
     setState(() {
       _isPosting = true;
     });
-    await MsGraph().registerEvent(plansModel);
+    await MsGraph().postEvents(plansModel);
     setState(() {
       _isPosting = false;
     });
@@ -80,7 +87,6 @@ class _OutlookButtonState extends State<_OutlookButton> {
   @override
   Widget build(BuildContext context) {
     var plansModel = Provider.of<PlansModel>(context);
-
     return SizedBox(
       width: widget.isSmall ? 40 : double.infinity,
       height: 40,
@@ -121,6 +127,162 @@ class _OutlookButtonState extends State<_OutlookButton> {
                     ],
                   ),
                   onPressed: () => _registerPlans(plansModel),
+                  color: Color(0xfff0f0f0),
+                  textColor: Colors.black54,
+                ),
+    );
+  }
+}
+
+class _PostChannelButton extends StatefulWidget {
+  final bool isSmall;
+
+  _PostChannelButton({@required this.isSmall});
+
+  @override
+  State<StatefulWidget> createState() => _PostChannelButtonState();
+}
+
+class _PostChannelButtonState extends State<_PostChannelButton> {
+  bool _isPosting = false;
+
+  Future<void> _postPlans(PlansModel plansModel) async {
+    setState(() {
+      _isPosting = true;
+    });
+    String name = await showPostTeamsDialog(context: context);
+    if (name != null) {
+      var responseBody = await MsGraph().postChannelMessage(plansModel, name);
+      var resultText;
+      if (responseBody != null && responseBody.isNotEmpty) {
+        String channelMessageInfo = await Cache.getChannelMessageInfo();
+        try {
+          Map channelMessageInfoMap = {};
+
+          if (channelMessageInfo.isNotEmpty) {
+            channelMessageInfoMap = json.decode(channelMessageInfo);
+          }
+
+          List newInfoList = [];
+
+          var startDate = DateTime(
+            plansModel.plans[0].startDateTime.year,
+            plansModel.plans[0].startDateTime.month,
+            plansModel.plans[0].startDateTime.day,
+            0,
+            0,
+            0,
+          );
+
+          var endDate = DateTime(
+            plansModel.plans[4].endDateTime.year,
+            plansModel.plans[4].endDateTime.month,
+            plansModel.plans[4].endDateTime.day,
+            23,
+            59,
+            59,
+          );
+
+          newInfoList.add({
+            "startDate": startDate.millisecondsSinceEpoch,
+            "endDate": endDate.millisecondsSinceEpoch,
+            "id": responseBody["id"],
+          });
+
+          if (channelMessageInfoMap.isNotEmpty) {
+            List oldList = channelMessageInfoMap["channelMessageInfo"];
+            oldList.forEach((element) {
+              if (startDate.millisecondsSinceEpoch != element["startDate"]) {
+                newInfoList.add(element);
+              }
+            });
+          }
+
+          channelMessageInfoMap = {"channelMessageInfo": newInfoList};
+
+          var now = DateTime.now().millisecondsSinceEpoch;
+          for (int i = 0; i < newInfoList.length; i++) {
+            if (newInfoList[i]["startDate"] <= now &&
+                now <= newInfoList[i]["endDate"]) {
+              plansModel.currentWeekMessageId = newInfoList[i]["id"];
+              print(newInfoList[i]["id"]);
+              break;
+            }
+          }
+
+          await Cache.setChannelMessageInfo(jsonEncode(channelMessageInfoMap));
+        } catch (e) {
+          debugPrint('channel message info save error.');
+          debugPrint('channel message info=$channelMessageInfo');
+          throw e;
+        }
+
+        resultText = 'Teamsに投稿しました。';
+      } else {
+        resultText = 'Teamsへの投稿に失敗しました。';
+      }
+
+      final snackBar = SnackBar(
+        content: Text(resultText),
+        action: SnackBarAction(
+          label: '閉じる',
+          textColor: Colors.yellow,
+          onPressed: () {
+            Scaffold.of(context).hideCurrentSnackBar();
+          },
+        ),
+      );
+      Scaffold.of(context).showSnackBar(snackBar);
+    }
+    setState(() {
+      _isPosting = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var plansModel = Provider.of<PlansModel>(context);
+    return SizedBox(
+      width: widget.isSmall ? 40 : double.infinity,
+      height: 40,
+      child: _isPosting
+          ? Center(
+              child: Container(
+                  width: 20, height: 20, child: CircularProgressIndicator()))
+          : widget.isSmall
+              ? Tooltip(
+                  message:
+                      'Teamsに投稿する\n<件名>\n${plansModel.getPlansSubject()}\n<本文>\n${plansModel.getPlansBody()}\n',
+                  child: FlatButton(
+                    child: const InkWell(
+                      child: Icon(
+                        Icons.post_add,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
+                      mouseCursor: MouseCursor.defer,
+                    ),
+                    onPressed: () => _postPlans(plansModel),
+                  ),
+                )
+              : FlatButton(
+                  child: Row(
+                    children: [
+                      const InkWell(
+                        child: Icon(
+                          Icons.post_add,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                      Text(
+                        'Teamsに投稿する',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  onPressed: () => _postPlans(plansModel),
                   color: Color(0xfff0f0f0),
                   textColor: Colors.black54,
                 ),

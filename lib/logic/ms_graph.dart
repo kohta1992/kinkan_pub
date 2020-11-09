@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:kinkanutilapp/group_const.dart';
 import 'package:kinkanutilapp/model/plans.dart';
 
 class MsGraph {
@@ -15,12 +16,13 @@ class MsGraph {
     await performLogin("microsoft.com", [
       'User.Read',
       'Calendars.ReadWrite',
+      'ChannelMessage.Send',
     ], {
       "location": "ja",
     });
   }
 
-  Future<void> performLogin(String provider, List<String> scopes,
+  Future<bool> performLogin(String provider, List<String> scopes,
       Map<String, String> parameters) async {
     try {
       final oAuthProvider = OAuthProvider(provider);
@@ -34,30 +36,13 @@ class MsGraph {
         _oAuthCredential = result.credential;
       }).catchError((error) {
         // Handle error.
+        return false;
       });
     } on PlatformException catch (error) {
       debugPrint("${error.code}: ${error.message}");
+      return false;
     }
-  }
-
-  registerEvent(PlansModel plansModel) async {
-    if (_oAuthCredential == null) {
-      await authorise();
-    }
-
-    if (_oAuthCredential == null) {
-      return;
-    }
-
-    var accessToken = _oAuthCredential.accessToken;
-
-    for (var plan in plansModel.plans) {
-      await postEvent(
-          token: accessToken,
-          subject: plan.getSubjectForOutlook(plansModel.isTimeUnneeded),
-          startDateTime: plan.getStartDateTimeForOutlook(),
-          endDateTime: plan.getEndDateTimeForOutlook());
-    }
+    return true;
   }
 
   Future<bool> postEvent(
@@ -83,6 +68,95 @@ class MsGraph {
           "isAllDay": true,
           "isReminderOn": false,
           "showAs": "free",
+        }));
+    if (response.statusCode == 201) {
+      debugPrint('post event success.');
+      return true;
+    } else {
+      debugPrint('post event error.');
+      debugPrint(response.toString());
+      return false;
+    }
+  }
+
+  postEvents(PlansModel plansModel) async {
+    if (_oAuthCredential == null) {
+      await authorise();
+    }
+
+    if (_oAuthCredential == null) {
+      return;
+    }
+
+    var accessToken = _oAuthCredential.accessToken;
+
+    for (var plan in plansModel.plans) {
+      await postEvent(
+          token: accessToken,
+          subject: plan.getSubjectForOutlook(plansModel.isTimeUnneeded),
+          startDateTime: plan.getStartDateTimeForOutlook(),
+          endDateTime: plan.getEndDateTimeForOutlook());
+    }
+  }
+
+  Future<Map> postChannelMessage(PlansModel plansModel, String name) async {
+    if (_oAuthCredential == null) {
+      await authorise();
+    }
+
+    if (_oAuthCredential == null) {
+      return null;
+    }
+
+    var accessToken = _oAuthCredential.accessToken;
+
+    final response = await http.post(
+        'https://graph.microsoft.com/v1.0/teams/${GroupConst.teamId}/channels/${GroupConst.channelId}/messages',
+        headers: {
+          'Authorization': '$accessToken',
+          'Content-Type': 'application/json'
+        },
+        body: json.encode({
+          "subject": plansModel.getPlansSubjectForTeams(name),
+          "body": {
+            "content": plansModel.getPlansBodyForTeams(),
+            "contentType": "html"
+          },
+        }));
+    if (response.statusCode == 201) {
+      try {
+        return json.decode(response.body);
+      } catch (e) {
+        debugPrint('json decode error.');
+        debugPrint('response body=${response.toString()}');
+        return null;
+      }
+    } else {
+      debugPrint('post event error.');
+      debugPrint(response.toString());
+      return null;
+    }
+  }
+
+  Future<bool> replyChannelMessage(String messageId, String replyText) async {
+    if (_oAuthCredential == null) {
+      await authorise();
+    }
+
+    if (_oAuthCredential == null) {
+      return false;
+    }
+
+    var accessToken = _oAuthCredential.accessToken;
+
+    final response = await http.post(
+        'https://graph.microsoft.com/v1.0/teams/${GroupConst.teamId}/channels/${GroupConst.channelId}/messages/$messageId/replies',
+        headers: {
+          'Authorization': '$accessToken',
+          'Content-Type': 'application/json'
+        },
+        body: json.encode({
+          "body": {"content": replyText, "contentType": "html"},
         }));
     if (response.statusCode == 201) {
       debugPrint('post event success.');

@@ -1,10 +1,10 @@
-
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
-import 'logic/cache.dart';
+import 'logic/Cache.dart';
 import 'model/date_format_const.dart';
 import 'model/plan.dart';
 import 'model/plans.dart';
@@ -19,29 +19,27 @@ final appTitle = 'Kinkan';
 
 class MyApp extends StatelessWidget {
   Future<void> init(PlansModel plansModel) async {
-    var cache = Cache();
-
     String today = DateFormatConst.dateHyphen.format(DateTime.now());
     String startTime;
     DateTime startDateTime;
-    await cache.getDefaultStartTimeValue().then((value) {
+    await Cache.getDefaultStartTimeValue().then((value) {
       startTime = value;
       startDateTime = DateTime.parse('$today $startTime:00.000');
     });
 
     String endTime;
     DateTime endDateTime;
-    await cache.getDefaultEndTimeValue().then((value) {
+    await Cache.getDefaultEndTimeValue().then((value) {
       endTime = value;
       endDateTime = DateTime.parse('$today $endTime:00.000');
     });
 
     WorkState workState;
-    await cache.getDefaultWorkStateValue().then((value) {
+    await Cache.getDefaultWorkStateValue().then((value) {
       workState = value;
     });
 
-    plansModel.setIsTimeUnneeded(await cache.getIsTimeUnneeded());
+    plansModel.setIsTimeUnneeded(await Cache.getIsTimeUnneeded());
 
     var defaultPlan = PlanModel(
         startDateTime: startDateTime,
@@ -63,6 +61,39 @@ class MyApp extends StatelessWidget {
       plansModel.setPlan(index, newPlan);
       index++;
     });
+
+    Map newMap = {};
+    String channelMessageInfo = await Cache.getChannelMessageInfo();
+    try {
+      if (channelMessageInfo.isEmpty) {
+        return;
+      }
+      Map channelMessageInfoMap = jsonDecode(channelMessageInfo);
+      List<Map> newList = [];
+
+      channelMessageInfoMap["channelMessageInfo"].forEach((element) {
+        if (element["endDate"] >= DateTime
+            .now()
+            .millisecondsSinceEpoch) {
+          newList.add(element);
+        }
+      });
+
+      newMap.addAll({"channelMessageInfo":newList});
+
+      await Cache.setChannelMessageInfo(jsonEncode(newMap));
+    } catch (e) {
+      debugPrint('channel message info save error.');
+      debugPrint('channel message info=$channelMessageInfo');
+    }
+
+    var now = DateTime.now().millisecondsSinceEpoch;
+    List infoList = newMap["channelMessageInfo"];
+    for (int i = 0; i < infoList.length; i++) {
+      if (infoList[i]["startDate"] <= now && now <= infoList[i]["endDate"]) {
+        plansModel.currentWeekMessageId = infoList[i]["id"];
+      }
+    }
 
     return plansModel;
   }
@@ -106,12 +137,13 @@ class MyApp extends StatelessWidget {
                   actions: [
                     IconButton(
                       icon: Icon(Icons.info),
-                      color: Colors.blueGrey,
-                      onPressed: () => showAboutDialog(
-                        context: context,
-                        applicationName: 'Kinkan',
-                        applicationVersion: '1.1.0',
-                      ),
+                      color: Colors.white,
+                      onPressed: () =>
+                          showAboutDialog(
+                            context: context,
+                            applicationName: 'Kinkan',
+                            applicationVersion: '1.1.5',
+                          ),
                     ),
                   ],
                   centerTitle: true,

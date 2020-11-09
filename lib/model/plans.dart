@@ -9,11 +9,14 @@ class PlansModel extends ChangeNotifier {
   // bool _isNeedsTime;
   bool _isTimeUnneeded;
 
+  String _currentWeekMessageId;
+
   PlansModel(
       {DateTime startTime,
       DateTime endTime,
       WorkState workState,
-      bool isTimeUnneeded}) {
+      bool isTimeUnneeded,
+      String currentWeekMessageId}) {
     _defaultPlan = PlanModel(
         startDateTime: startTime, endDateTime: endTime, workState: workState);
 
@@ -32,7 +35,9 @@ class PlansModel extends ChangeNotifier {
 
     _initDate();
 
-    _isTimeUnneeded = isTimeUnneeded?? false;
+    _isTimeUnneeded = isTimeUnneeded ?? false;
+
+    _currentWeekMessageId = currentWeekMessageId ?? "";
   }
 
   PlanModel get defaultPlan => _defaultPlan;
@@ -57,6 +62,14 @@ class PlansModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  String get currentWeekMessageId => _currentWeekMessageId;
+
+  set currentWeekMessageId(String currentWeekMessageId) {
+    assert(currentWeekMessageId != null);
+    _currentWeekMessageId = currentWeekMessageId;
+    notifyListeners();
+  }
+
   resetDate() {
     _initDate();
     notifyListeners();
@@ -75,8 +88,8 @@ class PlansModel extends ChangeNotifier {
       plan.setDefaultTime();
     });
     notifyListeners();
-    Cache().setDefaultStartTimeValue(_defaultPlan.startDateTime);
-    Cache().setDefaultEndTimeValue(_defaultPlan.endDateTime);
+    Cache.setDefaultStartTimeValue(_defaultPlan.startDateTime);
+    Cache.setDefaultEndTimeValue(_defaultPlan.endDateTime);
   }
 
   addDefaultStartTime(Duration duration) {
@@ -87,7 +100,7 @@ class PlansModel extends ChangeNotifier {
       _addStartTime(plan, duration);
     });
 
-    Cache().setDefaultStartTimeValue(_defaultPlan.startDateTime);
+    Cache.setDefaultStartTimeValue(_defaultPlan.startDateTime);
   }
 
   addDefaultEndTime(Duration duration) {
@@ -98,7 +111,7 @@ class PlansModel extends ChangeNotifier {
       _addEndTime(plan, duration);
     });
 
-    Cache().setDefaultEndTimeValue(_defaultPlan.endDateTime);
+    Cache.setDefaultEndTimeValue(_defaultPlan.endDateTime);
   }
 
   setDefaultWorkingTime(Duration duration) {
@@ -108,7 +121,7 @@ class PlansModel extends ChangeNotifier {
       plan.setWorkingTime(duration);
     });
     notifyListeners();
-    Cache().setDefaultEndTimeValue(_defaultPlan.endDateTime);
+    Cache.setDefaultEndTimeValue(_defaultPlan.endDateTime);
   }
 
   setDefaultWorkState(WorkState newWorkState) {
@@ -118,7 +131,7 @@ class PlansModel extends ChangeNotifier {
       plan.workState = newWorkState;
     });
     notifyListeners();
-    Cache().setDefaultWorkStateValue(_defaultPlan.workState);
+    Cache.setDefaultWorkStateValue(_defaultPlan.workState);
   }
 
   addStartTime(int index, Duration duration) {
@@ -156,7 +169,7 @@ class PlansModel extends ChangeNotifier {
   setIsTimeUnneeded(bool isTimeUnneeded) {
     _isTimeUnneeded = isTimeUnneeded;
     notifyListeners();
-    Cache().setIsTimeUnneeded(_isTimeUnneeded);
+    Cache.setIsTimeUnneeded(_isTimeUnneeded);
   }
 
   _initDate() {
@@ -218,6 +231,41 @@ class PlansModel extends ChangeNotifier {
 
       if (plan.startDateTime.weekday != DateTime.friday) {
         body += '\n';
+      }
+    });
+    return body;
+  }
+
+  String getPlansSubjectForTeams(String name) {
+    var subject = "";
+    subject += _plans[0].getDate();
+    subject += '-';
+    subject += _plans[4].getDate();
+    subject += ' 勤務予定 ($name)';
+    return subject;
+  }
+
+  String getPlansBodyForTeams() {
+    var body = "";
+    _plans.forEach((plan) {
+      body += plan.getDate();
+      body += ' ';
+      if (!_isTimeUnneeded &&
+          !(plan.workState == WorkState.PAID_VACATION ||
+              plan.workState == WorkState.PUBLIC_HOLIDAY)) {
+        body += plan.getStartTime();
+        body += '-';
+        body += plan.getEndTime();
+        body += ' ';
+      }
+      if (plan.workState == WorkState.PUBLIC_HOLIDAY) {
+        body += plan.holidayName;
+      } else {
+        body += plan.getWorkStateString();
+      }
+
+      if (plan.startDateTime.weekday != DateTime.friday) {
+        body += '<br>';
       }
     });
     return body;

@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import 'attendance.dart';
 import 'output_plans.dart';
 
 class SideBar extends StatefulWidget {
@@ -31,17 +31,26 @@ class _SideBarState extends State<SideBar> {
                 OutputPlans(
                   isSmall: !_isPreview,
                 ),
+                Padding(
+                  padding: EdgeInsets.only(top: 20, left: 5, right: 5),
+                  child: Divider(
+                    color: Colors.black26,
+                    thickness: 2,
+                  ),
+                ),
+                Attendance(
+                  isSmall: !_isPreview,
+                ),
               ],
             ),
           ),
           Align(
             alignment:
-            _isPreview ? Alignment.bottomRight : Alignment.bottomCenter,
+                _isPreview ? Alignment.bottomRight : Alignment.bottomCenter,
             child: SizedBox(
               width: 40,
               height: 40,
               child: FlatButton(
-
                 child: InkWell(
                   child: Icon(
                     _isPreview ? Icons.arrow_back_ios : Icons.arrow_forward_ios,
