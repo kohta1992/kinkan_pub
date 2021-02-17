@@ -1,10 +1,13 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:kinkanutilapp/logic/cache.dart';
 import 'package:kinkanutilapp/logic/ms_graph.dart';
 import 'package:kinkanutilapp/model/plans.dart';
+import 'package:kinkanutilapp/repository/user_repository.dart';
 import 'package:kinkanutilapp/screen/input_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -36,13 +39,33 @@ class Attendance extends StatelessWidget {
   }
 }
 
+_showErrorDialog({BuildContext context, String errorMessage}) async {
+  MaterialLocalizations localizations = MaterialLocalizations.of(context);
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      title: Text('エラー'),
+      content: Text(errorMessage),
+      actions: <Widget>[
+        FlatButton(
+          child: Text(localizations.okButtonLabel),
+          onPressed: () {
+            Navigator.pop<String>(context);
+          },
+        ),
+      ],
+    ),
+  );
+}
 
-Future<void> _replyMessage(
+Future<bool> _replyMessage(
     {BuildContext context, PlansModel plansModel, String replyText}) async {
   String resultText = "";
+  bool result = true;
 
   if (plansModel.currentWeekMessageId.isEmpty) {
     resultText = '今週の投稿IDがありません。';
+    result = false;
   } else {
     replyText = replyText.replaceAll('\n', '<br>');
 
@@ -70,9 +93,7 @@ Future<void> _replyMessage(
         }
 
         if (!existsId) {
-          int diff = DateTime.monday - DateTime
-              .now()
-              .weekday;
+          int diff = DateTime.monday - DateTime.now().weekday;
           if (diff > 1) {
             diff -= 8;
           }
@@ -98,11 +119,12 @@ Future<void> _replyMessage(
             59,
           );
 
-          List newInfoList = [{
-            "startDate": startDate.millisecondsSinceEpoch,
-            "endDate": endDate.millisecondsSinceEpoch,
-            "id": plansModel.currentWeekMessageId,
-          }
+          List newInfoList = [
+            {
+              "startDate": startDate.millisecondsSinceEpoch,
+              "endDate": endDate.millisecondsSinceEpoch,
+              "id": plansModel.currentWeekMessageId,
+            }
           ];
 
           if (channelMessageInfoMap.isNotEmpty) {
@@ -115,8 +137,7 @@ Future<void> _replyMessage(
           }
           channelMessageInfoMap = {"channelMessageInfo": newInfoList};
           print(newInfoList);
-          await Cache.setChannelMessageInfo(
-              jsonEncode(channelMessageInfoMap));
+          await Cache.setChannelMessageInfo(jsonEncode(channelMessageInfoMap));
         }
       } catch (e) {
         debugPrint('channel message info save error.');
@@ -125,6 +146,7 @@ Future<void> _replyMessage(
       }
     } else {
       resultText = 'Teamsへの投稿に失敗しました。';
+      result = false;
     }
   }
 
@@ -139,6 +161,8 @@ Future<void> _replyMessage(
     ),
   );
   Scaffold.of(context).showSnackBar(snackBar);
+
+  return result;
 }
 
 class _ChannelMessageUrlField extends StatefulWidget {
@@ -186,18 +210,31 @@ class _WorkStartedButtonState extends State<_WorkStartedButton> {
   bool _isPosting = false;
 
   Future _showDialog(PlansModel plansModel) async {
+    if (plansModel.currentWeekMessageId.isEmpty) {
+      _showErrorDialog(context: context, errorMessage: "今週の投稿IDがありません。");
+      return;
+    }
+
     setState(() {
       _isPosting = true;
     });
 
-    String inputted = await showInputDialog(context: context,
+    String inputted = await showInputDialog(
+      context: context,
       title: "業務を開始する",
       body: "以下のメッセージを送信します。よろしいですか？",
-      input: "業務を開始します。",);
+      input: "業務を開始します。",
+    );
 
     if (inputted != null && inputted.isNotEmpty) {
-      await _replyMessage(
-          context: context, plansModel: plansModel, replyText: inputted);
+      if (await _replyMessage(
+          context: context, plansModel: plansModel, replyText: inputted)) {
+        var currentUser =
+            FirebaseAuth.instanceFor(app: Firebase.app()).currentUser;
+        if (currentUser != null) {
+          UserRepository().updateState(currentUser, true);
+        }
+      }
     }
 
     setState(() {
@@ -213,41 +250,41 @@ class _WorkStartedButtonState extends State<_WorkStartedButton> {
       height: 40,
       child: _isPosting
           ? Center(
-          child: Container(
-              width: 20, height: 20, child: CircularProgressIndicator()))
+              child: Container(
+                  width: 20, height: 20, child: CircularProgressIndicator()))
           : FlatButton(
-        child: widget.isSmall
-            ? Tooltip(
-          message: '業務を開始する',
-          child: const InkWell(
-            child: Icon(
-              Icons.wb_sunny,
-              color: Colors.black54,
-              size: 20,
+              child: widget.isSmall
+                  ? Tooltip(
+                      message: '業務を開始する',
+                      child: const InkWell(
+                        child: Icon(
+                          Icons.wb_sunny,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                    )
+                  : Row(children: [
+                      const InkWell(
+                        child: Icon(
+                          Icons.wb_sunny,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                      Text(
+                        '業務を開始する',
+                        style: TextStyle(
+                          fontSize: 14,
+                        ),
+                      ),
+                    ]),
+              onPressed: () => _showDialog(plansModel),
+              color: Color(0xfff0f0f0),
+              textColor: Colors.black54,
             ),
-            mouseCursor: MouseCursor.defer,
-          ),
-        )
-            : Row(children: [
-          const InkWell(
-            child: Icon(
-              Icons.wb_sunny,
-              color: Colors.black54,
-              size: 20,
-            ),
-            mouseCursor: MouseCursor.defer,
-          ),
-          Text(
-            '業務を開始する',
-            style: TextStyle(
-              fontSize: 14,
-            ),
-          ),
-        ]),
-        onPressed: () => _showDialog(plansModel),
-        color: Color(0xfff0f0f0),
-        textColor: Colors.black54,
-      ),
     );
   }
 }
@@ -265,19 +302,31 @@ class _WorkEndedButtonState extends State<_WorkEndedButton> {
   bool _isPosting = false;
 
   Future _showDialog(PlansModel plansModel) async {
+    if (plansModel.currentWeekMessageId.isEmpty) {
+      _showErrorDialog(context: context, errorMessage: "今週の投稿IDがありません。");
+      return;
+    }
+
     setState(() {
       _isPosting = true;
     });
 
-
-    String inputted = await showInputDialog(context: context,
+    String inputted = await showInputDialog(
+      context: context,
       title: "業務を終了する",
       body: "以下のメッセージを送信します。よろしいですか？",
-      input: "業務を終了します。",);
+      input: "業務を終了します。",
+    );
 
     if (inputted != null && inputted.isNotEmpty) {
-      await _replyMessage(
-          context: context, plansModel: plansModel, replyText: inputted);
+      if (await _replyMessage(
+          context: context, plansModel: plansModel, replyText: inputted)) {
+        var currentUser =
+            FirebaseAuth.instanceFor(app: Firebase.app()).currentUser;
+        if (currentUser != null) {
+          UserRepository().updateState(currentUser, false);
+        }
+      }
     }
 
     setState(() {
@@ -293,41 +342,41 @@ class _WorkEndedButtonState extends State<_WorkEndedButton> {
       height: 40,
       child: _isPosting
           ? Center(
-          child: Container(
-              width: 20, height: 20, child: CircularProgressIndicator()))
+              child: Container(
+                  width: 20, height: 20, child: CircularProgressIndicator()))
           : FlatButton(
-        child: widget.isSmall
-            ? Tooltip(
-          message: '業務を終了する',
-          child: const InkWell(
-            child: Icon(
-              Icons.nightlight_round,
-              color: Colors.black54,
-              size: 20,
+              child: widget.isSmall
+                  ? Tooltip(
+                      message: '業務を終了する',
+                      child: const InkWell(
+                        child: Icon(
+                          Icons.nightlight_round,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                    )
+                  : Row(children: [
+                      const InkWell(
+                        child: Icon(
+                          Icons.nightlight_round,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                      Text(
+                        '業務を終了する',
+                        style: TextStyle(
+                          fontSize: 14,
+                        ),
+                      ),
+                    ]),
+              onPressed: () => _showDialog(plansModel),
+              color: Color(0xfff0f0f0),
+              textColor: Colors.black54,
             ),
-            mouseCursor: MouseCursor.defer,
-          ),
-        )
-            : Row(children: [
-          const InkWell(
-            child: Icon(
-              Icons.nightlight_round,
-              color: Colors.black54,
-              size: 20,
-            ),
-            mouseCursor: MouseCursor.defer,
-          ),
-          Text(
-            '業務を終了する',
-            style: TextStyle(
-              fontSize: 14,
-            ),
-          ),
-        ]),
-        onPressed: () => _showDialog(plansModel),
-        color: Color(0xfff0f0f0),
-        textColor: Colors.black54,
-      ),
     );
   }
 }
@@ -345,14 +394,40 @@ class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
   bool _isPosting = false;
 
   Future _showDialog(PlansModel plansModel) async {
+    if (plansModel.currentWeekMessageId.isEmpty) {
+      _showErrorDialog(context: context, errorMessage: "今週の投稿IDがありません。");
+      return;
+    }
     setState(() {
       _isPosting = true;
     });
 
-    String inputted = await showInputDialog(context: context,
+    if (plansModel.currentWeekMessageId.isEmpty) {
+      MaterialLocalizations localizations = MaterialLocalizations.of(context);
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('エラー'),
+          content: Text('今週の投稿IDがありません。'),
+          actions: <Widget>[
+            FlatButton(
+              child: Text(localizations.okButtonLabel),
+              onPressed: () {
+                Navigator.pop<String>(context);
+              },
+            ),
+          ],
+        ),
+      );
+      return false;
+    }
+
+    String inputted = await showInputDialog(
+      context: context,
       title: "予定に返信する",
       body: "以下のメッセージを送信します。よろしいですか？",
-      inputHint: "今週の予定に返信する内容を入力してください。",);
+      inputHint: "今週の予定に返信する内容を入力してください。",
+    );
 
     if (inputted != null && inputted.isNotEmpty) {
       await _replyMessage(
@@ -372,41 +447,41 @@ class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
       height: 40,
       child: _isPosting
           ? Center(
-          child: Container(
-              width: 20, height: 20, child: CircularProgressIndicator()))
+              child: Container(
+                  width: 20, height: 20, child: CircularProgressIndicator()))
           : FlatButton(
-        child: widget.isSmall
-            ? Tooltip(
-          message: '予定に返信する',
-          child: const InkWell(
-            child: Icon(
-              Icons.reply,
-              color: Colors.black54,
-              size: 20,
+              child: widget.isSmall
+                  ? Tooltip(
+                      message: '予定に返信する',
+                      child: const InkWell(
+                        child: Icon(
+                          Icons.reply,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                    )
+                  : Row(children: [
+                      const InkWell(
+                        child: Icon(
+                          Icons.reply,
+                          color: Colors.black54,
+                          size: 20,
+                        ),
+                        mouseCursor: MouseCursor.defer,
+                      ),
+                      Text(
+                        '予定に返信する',
+                        style: TextStyle(
+                          fontSize: 14,
+                        ),
+                      ),
+                    ]),
+              onPressed: () => _showDialog(plansModel),
+              color: Color(0xfff0f0f0),
+              textColor: Colors.black54,
             ),
-            mouseCursor: MouseCursor.defer,
-          ),
-        )
-            : Row(children: [
-          const InkWell(
-            child: Icon(
-              Icons.reply,
-              color: Colors.black54,
-              size: 20,
-            ),
-            mouseCursor: MouseCursor.defer,
-          ),
-          Text(
-            '予定に返信する',
-            style: TextStyle(
-              fontSize: 14,
-            ),
-          ),
-        ]),
-        onPressed: () => _showDialog(plansModel),
-        color: Color(0xfff0f0f0),
-        textColor: Colors.black54,
-      ),
     );
   }
 }

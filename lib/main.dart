@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:kinkanutilapp/screen/users.dart';
 import 'package:provider/provider.dart';
 
 import 'logic/Cache.dart';
@@ -72,14 +73,12 @@ class MyApp extends StatelessWidget {
       List<Map> newList = [];
 
       channelMessageInfoMap["channelMessageInfo"].forEach((element) {
-        if (element["endDate"] >= DateTime
-            .now()
-            .millisecondsSinceEpoch) {
+        if (element["endDate"] >= DateTime.now().millisecondsSinceEpoch) {
           newList.add(element);
         }
       });
 
-      newMap.addAll({"channelMessageInfo":newList});
+      newMap.addAll({"channelMessageInfo": newList});
 
       await Cache.setChannelMessageInfo(jsonEncode(newMap));
     } catch (e) {
@@ -112,6 +111,9 @@ class MyApp extends StatelessWidget {
             primarySwatch: Colors.blue,
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
+          routes: {
+            '/users': (_) => UsersPage(),
+          },
           home: Builder(builder: (BuildContext context) {
             return Scaffold(
                 appBar: AppBar(
@@ -135,15 +137,21 @@ class MyApp extends StatelessWidget {
                     ),
                   ),
                   actions: [
+                    FlatButton(
+                      child: Text('勤務状況 (beta)',
+                          style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/users');
+                      },
+                    ),
                     IconButton(
                       icon: Icon(Icons.info),
                       color: Colors.white,
-                      onPressed: () =>
-                          showAboutDialog(
-                            context: context,
-                            applicationName: 'Kinkan',
-                            applicationVersion: '1.1.5',
-                          ),
+                      onPressed: () => showAboutDialog(
+                        context: context,
+                        applicationName: 'Kinkan',
+                        applicationVersion: '1.1.8',
+                      ),
                     ),
                   ],
                   centerTitle: true,

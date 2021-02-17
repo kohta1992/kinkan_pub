@@ -137,7 +137,7 @@ class PlanModel {
 
 
   String getSubjectForOutlook(bool isTimeUnneeded) {
-    if (isTimeUnneeded || workState == WorkState.PAID_VACATION) {
+    if (isTimeUnneeded || workState == WorkState.PAID_VACATION || workState == WorkState.SEASON_VACATION) {
       return workStateMap[workState];
     }
 
@@ -168,10 +168,12 @@ enum WorkState {
   REMOTE,
   PAID_VACATION,
   PUBLIC_HOLIDAY,
+  SEASON_VACATION,
 }
 
 final defaultWorkStateMap = {
   WorkState.OFFICE: "出社",
   WorkState.REMOTE: "リモート",
   WorkState.PAID_VACATION: "有給休暇",
+  WorkState.SEASON_VACATION: "季節休暇",
 };

@@ -217,7 +217,8 @@ class PlansModel extends ChangeNotifier {
       body += ' ';
       if (!_isTimeUnneeded &&
           !(plan.workState == WorkState.PAID_VACATION ||
-              plan.workState == WorkState.PUBLIC_HOLIDAY)) {
+              plan.workState == WorkState.PUBLIC_HOLIDAY ||
+              plan.workState == WorkState.SEASON_VACATION)) {
         body += plan.getStartTime();
         body += '-';
         body += plan.getEndTime();
@@ -252,7 +253,8 @@ class PlansModel extends ChangeNotifier {
       body += ' ';
       if (!_isTimeUnneeded &&
           !(plan.workState == WorkState.PAID_VACATION ||
-              plan.workState == WorkState.PUBLIC_HOLIDAY)) {
+              plan.workState == WorkState.PUBLIC_HOLIDAY ||
+              plan.workState == WorkState.SEASON_VACATION)) {
         body += plan.getStartTime();
         body += '-';
         body += plan.getEndTime();
