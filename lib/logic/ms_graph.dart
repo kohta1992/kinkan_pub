@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:kinkanutilapp/group_const.dart';
 import 'package:kinkanutilapp/model/plans.dart';
 
+import 'cache.dart';
+
 class MsGraph {
   FirebaseAuth _auth = FirebaseAuth.instanceFor(app: Firebase.app());
   OAuthCredential _oAuthCredential;
@@ -110,8 +112,11 @@ class MsGraph {
 
     var accessToken = _oAuthCredential.accessToken;
 
+    String channelId = await Cache.getChannelId();
+    String groupId = await Cache.getGroupId();
+
     final response = await http.post(
-        'https://graph.microsoft.com/v1.0/teams/${GroupConst.teamId}/channels/${GroupConst.channelId}/messages',
+        'https://graph.microsoft.com/v1.0/teams/$groupId/channels/$channelId/messages',
         headers: {
           'Authorization': '$accessToken',
           'Content-Type': 'application/json'
@@ -149,8 +154,11 @@ class MsGraph {
 
     var accessToken = _oAuthCredential.accessToken;
 
+    String channelId = await Cache.getChannelId();
+    String groupId = await Cache.getGroupId();
+
     final response = await http.post(
-        'https://graph.microsoft.com/v1.0/teams/${GroupConst.teamId}/channels/${GroupConst.channelId}/messages/$messageId/replies',
+        'https://graph.microsoft.com/v1.0/teams/$groupId/channels/$channelId/messages/$messageId/replies',
         headers: {
           'Authorization': '$accessToken',
           'Content-Type': 'application/json'

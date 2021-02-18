@@ -90,5 +90,33 @@ class Cache {
     _prefs.setBool('isTimeUnneeded', isTimeUnneeded);
   }
 
+  static Future<String> getChannelId() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs.getString('channelId') ?? "";
+  }
+
+  static Future<void> setChannelId(String channelId) async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setString('channelId', channelId);
+  }
+
+  static Future<String> getGroupId() async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    return _prefs.getString('groupId') ?? "";
+  }
+
+  static Future<void> setGroupId(String groupId) async {
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    _prefs.setString('groupId', groupId);
+  }
+
 
 }

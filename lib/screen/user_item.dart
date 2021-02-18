@@ -44,6 +44,7 @@ class UserItem extends StatelessWidget {
                       child: Text(
                         "${user.name}",
                         textAlign: TextAlign.center,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 20,

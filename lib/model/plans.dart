@@ -9,7 +9,7 @@ class PlansModel extends ChangeNotifier {
   // bool _isNeedsTime;
   bool _isTimeUnneeded;
 
-  String _currentWeekMessageId;
+  // String _currentWeekMessageId;
 
   PlansModel(
       {DateTime startTime,
@@ -37,7 +37,7 @@ class PlansModel extends ChangeNotifier {
 
     _isTimeUnneeded = isTimeUnneeded ?? false;
 
-    _currentWeekMessageId = currentWeekMessageId ?? "";
+    // _currentWeekMessageId = currentWeekMessageId ?? "";
   }
 
   PlanModel get defaultPlan => _defaultPlan;
@@ -59,14 +59,6 @@ class PlansModel extends ChangeNotifier {
     assert(newPlan != null);
     assert(index < _plans.length);
     _plans[index] = newPlan;
-    notifyListeners();
-  }
-
-  String get currentWeekMessageId => _currentWeekMessageId;
-
-  set currentWeekMessageId(String currentWeekMessageId) {
-    assert(currentWeekMessageId != null);
-    _currentWeekMessageId = currentWeekMessageId;
     notifyListeners();
   }
 

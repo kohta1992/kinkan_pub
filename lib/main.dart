@@ -86,14 +86,6 @@ class MyApp extends StatelessWidget {
       debugPrint('channel message info=$channelMessageInfo');
     }
 
-    var now = DateTime.now().millisecondsSinceEpoch;
-    List infoList = newMap["channelMessageInfo"];
-    for (int i = 0; i < infoList.length; i++) {
-      if (infoList[i]["startDate"] <= now && now <= infoList[i]["endDate"]) {
-        plansModel.currentWeekMessageId = infoList[i]["id"];
-      }
-    }
-
     return plansModel;
   }
 
@@ -150,7 +142,7 @@ class MyApp extends StatelessWidget {
                       onPressed: () => showAboutDialog(
                         context: context,
                         applicationName: 'Kinkan',
-                        applicationVersion: '1.1.8',
+                        applicationVersion: '1.2.0',
                       ),
                     ),
                   ],

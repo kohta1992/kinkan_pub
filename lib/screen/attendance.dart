@@ -23,11 +23,11 @@ class Attendance extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          height: 200,
+          height: 150,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              isSmall ? Container() : _ChannelMessageUrlField(),
+              // isSmall ? Container() : _ChannelMessageUrlField(),
               _WorkStartedButton(isSmall: isSmall),
               _WorkEndedButton(isSmall: isSmall),
               _ReplyCurrentPlansButton(isSmall: isSmall),
@@ -59,18 +59,19 @@ _showErrorDialog({BuildContext context, String errorMessage}) async {
 }
 
 Future<bool> _replyMessage(
-    {BuildContext context, PlansModel plansModel, String replyText}) async {
+    {BuildContext context,
+    String currentWeekMessageId,
+    String replyText}) async {
   String resultText = "";
   bool result = true;
 
-  if (plansModel.currentWeekMessageId.isEmpty) {
+  if (currentWeekMessageId.isEmpty) {
     resultText = '今週の投稿IDがありません。';
     result = false;
   } else {
     replyText = replyText.replaceAll('\n', '<br>');
 
-    if (await MsGraph()
-        .replyChannelMessage(plansModel.currentWeekMessageId, replyText)) {
+    if (await MsGraph().replyChannelMessage(currentWeekMessageId, replyText)) {
       resultText = 'Teamsに投稿しました。';
       String channelMessageInfo = await Cache.getChannelMessageInfo();
       try {
@@ -80,13 +81,12 @@ Future<bool> _replyMessage(
           channelMessageInfoMap = json.decode(channelMessageInfo);
         }
 
-
         List infoList = channelMessageInfoMap["channelMessageInfo"] ?? [];
 
         bool existsId = false;
 
         for (int i = 0; i < infoList.length; i++) {
-          if (infoList[i]["id"] == plansModel.currentWeekMessageId) {
+          if (infoList[i]["id"] == currentWeekMessageId) {
             existsId = true;
             break;
           }
@@ -123,7 +123,7 @@ Future<bool> _replyMessage(
             {
               "startDate": startDate.millisecondsSinceEpoch,
               "endDate": endDate.millisecondsSinceEpoch,
-              "id": plansModel.currentWeekMessageId,
+              "id": currentWeekMessageId,
             }
           ];
 
@@ -165,38 +165,6 @@ Future<bool> _replyMessage(
   return result;
 }
 
-class _ChannelMessageUrlField extends StatefulWidget {
-  @override
-  State createState() => _ChannelMessageUrlFieldState();
-}
-
-class _ChannelMessageUrlFieldState extends State<_ChannelMessageUrlField> {
-  TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    var plansModel = Provider.of<PlansModel>(context);
-    this.controller = TextEditingController(
-      text: plansModel.currentWeekMessageId,
-    );
-    return Padding(
-        padding: EdgeInsets.only(left: 10, right: 10),
-        child: TextFormField(
-          decoration: InputDecoration(labelText: "今週の投稿ID"),
-          controller: controller,
-          onChanged: (newValue) {
-            plansModel.currentWeekMessageId = controller.text;
-          },
-        ));
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-}
-
 class _WorkStartedButton extends StatefulWidget {
   final bool isSmall;
 
@@ -209,8 +177,36 @@ class _WorkStartedButton extends StatefulWidget {
 class _WorkStartedButtonState extends State<_WorkStartedButton> {
   bool _isPosting = false;
 
-  Future _showDialog(PlansModel plansModel) async {
-    if (plansModel.currentWeekMessageId.isEmpty) {
+  Future _showDialog() async {
+    String currentWeekMessageId = "";
+    await Cache.getChannelMessageInfo().then((value) {
+      try {
+        Map channelMessageInfoMap = {};
+
+        if (value.isNotEmpty) {
+          channelMessageInfoMap = json.decode(value);
+        }
+
+        List infoList = channelMessageInfoMap["channelMessageInfo"] ?? [];
+
+        var now = DateTime.now().millisecondsSinceEpoch;
+        for (int i = 0; i < infoList.length; i++) {
+          if (infoList[i]["startDate"] <= now &&
+              now <= infoList[i]["endDate"]) {
+            currentWeekMessageId = infoList[i]["id"];
+            break;
+          }
+        }
+      } catch (e) {
+        debugPrint('channel message info save error.');
+        debugPrint('channel message info=$value');
+        debugPrint(e.toString());
+
+        throw e;
+      }
+    });
+
+    if (currentWeekMessageId.isEmpty) {
       _showErrorDialog(context: context, errorMessage: "今週の投稿IDがありません。");
       return;
     }
@@ -228,7 +224,9 @@ class _WorkStartedButtonState extends State<_WorkStartedButton> {
 
     if (inputted != null && inputted.isNotEmpty) {
       if (await _replyMessage(
-          context: context, plansModel: plansModel, replyText: inputted)) {
+          context: context,
+          currentWeekMessageId: currentWeekMessageId,
+          replyText: inputted)) {
         var currentUser =
             FirebaseAuth.instanceFor(app: Firebase.app()).currentUser;
         if (currentUser != null) {
@@ -244,7 +242,6 @@ class _WorkStartedButtonState extends State<_WorkStartedButton> {
 
   @override
   Widget build(BuildContext context) {
-    var plansModel = Provider.of<PlansModel>(context);
     return SizedBox(
       width: widget.isSmall ? 40 : double.infinity,
       height: 40,
@@ -281,7 +278,7 @@ class _WorkStartedButtonState extends State<_WorkStartedButton> {
                         ),
                       ),
                     ]),
-              onPressed: () => _showDialog(plansModel),
+              onPressed: () => _showDialog(),
               color: Color(0xfff0f0f0),
               textColor: Colors.black54,
             ),
@@ -302,7 +299,35 @@ class _WorkEndedButtonState extends State<_WorkEndedButton> {
   bool _isPosting = false;
 
   Future _showDialog(PlansModel plansModel) async {
-    if (plansModel.currentWeekMessageId.isEmpty) {
+    String currentWeekMessageId = "";
+    await Cache.getChannelMessageInfo().then((value) {
+      try {
+        Map channelMessageInfoMap = {};
+
+        if (value.isNotEmpty) {
+          channelMessageInfoMap = json.decode(value);
+        }
+
+        List infoList = channelMessageInfoMap["channelMessageInfo"] ?? [];
+
+        var now = DateTime.now().millisecondsSinceEpoch;
+        for (int i = 0; i < infoList.length; i++) {
+          if (infoList[i]["startDate"] <= now &&
+              now <= infoList[i]["endDate"]) {
+            currentWeekMessageId = infoList[i]["id"];
+            break;
+          }
+        }
+      } catch (e) {
+        debugPrint('channel message info save error.');
+        debugPrint('channel message info=$value');
+        debugPrint(e.toString());
+
+        throw e;
+      }
+    });
+
+    if (currentWeekMessageId.isEmpty) {
       _showErrorDialog(context: context, errorMessage: "今週の投稿IDがありません。");
       return;
     }
@@ -320,7 +345,9 @@ class _WorkEndedButtonState extends State<_WorkEndedButton> {
 
     if (inputted != null && inputted.isNotEmpty) {
       if (await _replyMessage(
-          context: context, plansModel: plansModel, replyText: inputted)) {
+          context: context,
+          currentWeekMessageId: currentWeekMessageId,
+          replyText: inputted)) {
         var currentUser =
             FirebaseAuth.instanceFor(app: Firebase.app()).currentUser;
         if (currentUser != null) {
@@ -393,8 +420,36 @@ class _ReplyCurrentPlansButton extends StatefulWidget {
 class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
   bool _isPosting = false;
 
-  Future _showDialog(PlansModel plansModel) async {
-    if (plansModel.currentWeekMessageId.isEmpty) {
+  Future _showDialog() async {
+    String currentWeekMessageId = "";
+    await Cache.getChannelMessageInfo().then((value) {
+      try {
+        Map channelMessageInfoMap = {};
+
+        if (value.isNotEmpty) {
+          channelMessageInfoMap = json.decode(value);
+        }
+
+        List infoList = channelMessageInfoMap["channelMessageInfo"] ?? [];
+
+        var now = DateTime.now().millisecondsSinceEpoch;
+        for (int i = 0; i < infoList.length; i++) {
+          if (infoList[i]["startDate"] <= now &&
+              now <= infoList[i]["endDate"]) {
+            currentWeekMessageId = infoList[i]["id"];
+            break;
+          }
+        }
+      } catch (e) {
+        debugPrint('channel message info save error.');
+        debugPrint('channel message info=$value');
+        debugPrint(e.toString());
+
+        throw e;
+      }
+    });
+
+    if (currentWeekMessageId.isEmpty) {
       _showErrorDialog(context: context, errorMessage: "今週の投稿IDがありません。");
       return;
     }
@@ -402,7 +457,7 @@ class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
       _isPosting = true;
     });
 
-    if (plansModel.currentWeekMessageId.isEmpty) {
+    if (currentWeekMessageId.isEmpty) {
       MaterialLocalizations localizations = MaterialLocalizations.of(context);
       await showDialog(
         context: context,
@@ -431,7 +486,9 @@ class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
 
     if (inputted != null && inputted.isNotEmpty) {
       await _replyMessage(
-          context: context, plansModel: plansModel, replyText: inputted);
+          context: context,
+          currentWeekMessageId: currentWeekMessageId,
+          replyText: inputted);
     }
 
     setState(() {
@@ -441,7 +498,6 @@ class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
 
   @override
   Widget build(BuildContext context) {
-    var plansModel = Provider.of<PlansModel>(context);
     return SizedBox(
       width: widget.isSmall ? 40 : double.infinity,
       height: 40,
@@ -478,7 +534,7 @@ class _ReplyCurrentPlansButtonState extends State<_ReplyCurrentPlansButton> {
                         ),
                       ),
                     ]),
-              onPressed: () => _showDialog(plansModel),
+              onPressed: () => _showDialog(),
               color: Color(0xfff0f0f0),
               textColor: Colors.black54,
             ),
