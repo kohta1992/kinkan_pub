@@ -23,7 +23,7 @@ class OutputPlans extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          height: 200,
+          height: 150,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -33,13 +33,7 @@ class OutputPlans extends StatelessWidget {
               _PostChannelButton(
                 isSmall: isSmall,
               ),
-              _MailerOpenButton(
-                isSmall: isSmall,
-              ),
               _CopyResultButton(
-                isSmall: isSmall,
-              ),
-              _TeamsOpenButton(
                 isSmall: isSmall,
               ),
             ],
@@ -200,16 +194,6 @@ class _PostChannelButtonState extends State<_PostChannelButton> {
 
           channelMessageInfoMap = {"channelMessageInfo": newInfoList};
 
-          var now = DateTime.now().millisecondsSinceEpoch;
-          for (int i = 0; i < newInfoList.length; i++) {
-            if (newInfoList[i]["startDate"] <= now &&
-                now <= newInfoList[i]["endDate"]) {
-              plansModel.currentWeekMessageId = newInfoList[i]["id"];
-              print(newInfoList[i]["id"]);
-              break;
-            }
-          }
-
           await Cache.setChannelMessageInfo(jsonEncode(channelMessageInfoMap));
         } catch (e) {
           debugPrint('channel message info save error.');
@@ -335,75 +319,75 @@ class _PlansPreview extends StatelessWidget {
   }
 }
 
-class _MailerOpenButton extends StatefulWidget {
-  final bool isSmall;
-
-  _MailerOpenButton({@required this.isSmall});
-
-  @override
-  State<StatefulWidget> createState() => _MailerOpenButtonState();
-}
-
-class _MailerOpenButtonState extends State<_MailerOpenButton> {
-  Future<void> _openMailer(PlansModel plansModel) async {
-    String subject = Uri.encodeComponent(plansModel.getPlansSubject());
-    String body = Uri.encodeComponent(plansModel.getPlansBody());
-    String url =
-        "mailto:${GroupConst.teamsAddress}?subject=$subject&body=$body";
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    var plansModel = Provider.of<PlansModel>(context);
-
-    return SizedBox(
-      width: widget.isSmall ? 40 : double.infinity,
-      height: 40,
-      child: widget.isSmall
-          ? Tooltip(
-              message:
-                  'メールで送信する\n<件名>\n${plansModel.getPlansSubject()}\n<本文>\n${plansModel.getPlansBody()}\n',
-              child: FlatButton(
-                child: const InkWell(
-                  child: Icon(
-                    Icons.mail,
-                    color: Colors.black54,
-                    size: 20,
-                  ),
-                  mouseCursor: MouseCursor.defer,
-                ),
-                onPressed: () => _openMailer(plansModel),
-              ),
-            )
-          : FlatButton(
-              child: Row(
-                children: [
-                  const InkWell(
-                    child: Icon(
-                      Icons.mail,
-                      color: Colors.black54,
-                      size: 20,
-                    ),
-                    mouseCursor: MouseCursor.defer,
-                  ),
-                  Text(
-                    'メールで送信する',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-              onPressed: () => _openMailer(plansModel),
-              color: Color(0xfff0f0f0),
-              textColor: Colors.black54,
-            ),
-    );
-  }
-}
+// class _MailerOpenButton extends StatefulWidget {
+//   final bool isSmall;
+//
+//   _MailerOpenButton({@required this.isSmall});
+//
+//   @override
+//   State<StatefulWidget> createState() => _MailerOpenButtonState();
+// }
+//
+// class _MailerOpenButtonState extends State<_MailerOpenButton> {
+//   Future<void> _openMailer(PlansModel plansModel) async {
+//     String subject = Uri.encodeComponent(plansModel.getPlansSubject());
+//     String body = Uri.encodeComponent(plansModel.getPlansBody());
+//     String url =
+//         "mailto:${GroupConst.teamsAddress}?subject=$subject&body=$body";
+//     if (await canLaunch(url)) {
+//       await launch(url);
+//     } else {
+//       throw 'Could not launch $url';
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     var plansModel = Provider.of<PlansModel>(context);
+//
+//     return SizedBox(
+//       width: widget.isSmall ? 40 : double.infinity,
+//       height: 40,
+//       child: widget.isSmall
+//           ? Tooltip(
+//               message:
+//                   'メールで送信する\n<件名>\n${plansModel.getPlansSubject()}\n<本文>\n${plansModel.getPlansBody()}\n',
+//               child: FlatButton(
+//                 child: const InkWell(
+//                   child: Icon(
+//                     Icons.mail,
+//                     color: Colors.black54,
+//                     size: 20,
+//                   ),
+//                   mouseCursor: MouseCursor.defer,
+//                 ),
+//                 onPressed: () => _openMailer(plansModel),
+//               ),
+//             )
+//           : FlatButton(
+//               child: Row(
+//                 children: [
+//                   const InkWell(
+//                     child: Icon(
+//                       Icons.mail,
+//                       color: Colors.black54,
+//                       size: 20,
+//                     ),
+//                     mouseCursor: MouseCursor.defer,
+//                   ),
+//                   Text(
+//                     'メールで送信する',
+//                     style: TextStyle(fontSize: 14),
+//                   ),
+//                 ],
+//               ),
+//               onPressed: () => _openMailer(plansModel),
+//               color: Color(0xfff0f0f0),
+//               textColor: Colors.black54,
+//             ),
+//     );
+//   }
+// }
 
 class _CopyResultButton extends StatefulWidget {
   final bool isSmall;
@@ -476,59 +460,59 @@ class _CopyResultButtonState extends State<_CopyResultButton> {
     );
   }
 }
-
-class _TeamsOpenButton extends StatefulWidget {
-  final bool isSmall;
-
-  _TeamsOpenButton({@required this.isSmall});
-
-  @override
-  State<StatefulWidget> createState() => _TeamsOpenButtonState();
-}
-
-class _TeamsOpenButtonState extends State<_TeamsOpenButton> {
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.isSmall ? 40 : double.infinity,
-      height: 40,
-      child: FlatButton(
-        child: widget.isSmall
-            ? Tooltip(
-                message: 'Teamsを開く',
-                child: const InkWell(
-                  child: Icon(
-                    Icons.open_in_new,
-                    color: Colors.black54,
-                    size: 20,
-                  ),
-                  mouseCursor: MouseCursor.defer,
-                ),
-              )
-            : Row(
-                children: [
-                  const InkWell(
-                    child: Icon(
-                      Icons.open_in_new,
-                      color: Colors.black54,
-                      size: 20,
-                    ),
-                    mouseCursor: MouseCursor.defer,
-                  ),
-                  Text(
-                    'Teamsを開く',
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-        onPressed: () async {
-          launch(GroupConst.teamsUrl);
-        },
-        color: Color(0xfff0f0f0),
-        textColor: Colors.black54,
-      ),
-    );
-  }
-}
+//
+// class _TeamsOpenButton extends StatefulWidget {
+//   final bool isSmall;
+//
+//   _TeamsOpenButton({@required this.isSmall});
+//
+//   @override
+//   State<StatefulWidget> createState() => _TeamsOpenButtonState();
+// }
+//
+// class _TeamsOpenButtonState extends State<_TeamsOpenButton> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return SizedBox(
+//       width: widget.isSmall ? 40 : double.infinity,
+//       height: 40,
+//       child: FlatButton(
+//         child: widget.isSmall
+//             ? Tooltip(
+//                 message: 'Teamsを開く',
+//                 child: const InkWell(
+//                   child: Icon(
+//                     Icons.open_in_new,
+//                     color: Colors.black54,
+//                     size: 20,
+//                   ),
+//                   mouseCursor: MouseCursor.defer,
+//                 ),
+//               )
+//             : Row(
+//                 children: [
+//                   const InkWell(
+//                     child: Icon(
+//                       Icons.open_in_new,
+//                       color: Colors.black54,
+//                       size: 20,
+//                     ),
+//                     mouseCursor: MouseCursor.defer,
+//                   ),
+//                   Text(
+//                     'Teamsを開く',
+//                     style: TextStyle(
+//                       fontSize: 14,
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//         onPressed: () async {
+//           launch(GroupConst.teamsUrl);
+//         },
+//         color: Color(0xfff0f0f0),
+//         textColor: Colors.black54,
+//       ),
+//     );
+//   }
+// }

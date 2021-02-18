@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:kinkanutilapp/screen/setting_button.dart';
 
 import 'attendance.dart';
 import 'output_plans.dart';
@@ -10,6 +11,8 @@ class SideBar extends StatefulWidget {
 }
 
 class _SideBarState extends State<SideBar> {
+  ScrollController _scrollController = ScrollController();
+
   bool _isPreview = false;
 
   @override
@@ -21,27 +24,41 @@ class _SideBarState extends State<SideBar> {
         color: Color(0xfff0f0f0),
       ),
       height: double.infinity,
-      child: Stack(
+      child: Column(
         children: [
-          Align(
-            alignment: _isPreview ? Alignment.topRight : Alignment.topCenter,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                OutputPlans(
-                  isSmall: !_isPreview,
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: Align(
+                alignment:
+                    _isPreview ? Alignment.topRight : Alignment.topCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutputPlans(
+                      isSmall: !_isPreview,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 5, right: 5),
+                      child: Divider(
+                        color: Colors.black26,
+                        thickness: 2,
+                      ),
+                    ),
+                    Attendance(
+                      isSmall: !_isPreview,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 5, right: 5),
+                      child: Divider(
+                        color: Colors.black26,
+                        thickness: 2,
+                      ),
+                    ),
+                    SettingsButton(isSmall: !_isPreview),
+                  ],
                 ),
-                Padding(
-                  padding: EdgeInsets.only(top: 20, left: 5, right: 5),
-                  child: Divider(
-                    color: Colors.black26,
-                    thickness: 2,
-                  ),
-                ),
-                Attendance(
-                  isSmall: !_isPreview,
-                ),
-              ],
+              ),
             ),
           ),
           Align(
