@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:kinkanutilapp/model/plans.dart';
+import 'package:kinkanutilapp/screen/DialogUtils.dart';
 import 'package:kinkanutilapp/screen/setting_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +17,7 @@ class SettingsButton extends StatefulWidget {
 class _SettingsButtonState extends State<SettingsButton> {
 
   Future _showDialog() async {
-    String inputted = await showSettingDialog(
+    String inputted = await DialogUtils.showSettingDialog(
       context: context,
       title: "",
       body: "",

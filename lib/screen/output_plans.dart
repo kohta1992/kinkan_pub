@@ -11,6 +11,8 @@ import 'package:kinkanutilapp/screen/post_teams_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'DialogUtils.dart';
+
 class OutputPlans extends StatelessWidget {
   final bool isSmall;
 
@@ -61,21 +63,26 @@ class _OutlookButtonState extends State<_OutlookButton> {
     setState(() {
       _isPosting = true;
     });
-    await MsGraph().postEvents(plansModel);
+    bool isSuccess = await MsGraph().postEvents(plansModel);
     setState(() {
       _isPosting = false;
     });
-    final snackBar = SnackBar(
-      content: Text('Outlookの予定表に登録しました。'),
-      action: SnackBarAction(
-        label: '閉じる',
-        textColor: Colors.yellow,
-        onPressed: () {
-          Scaffold.of(context).hideCurrentSnackBar();
-        },
-      ),
-    );
-    Scaffold.of(context).showSnackBar(snackBar);
+    if (isSuccess) {
+      final snackBar = SnackBar(
+        content: Text('Outlookの予定表に登録しました。'),
+        action: SnackBarAction(
+          label: '閉じる',
+          textColor: Colors.yellow,
+          onPressed: () {
+            Scaffold.of(context).hideCurrentSnackBar();
+          },
+        ),
+      );
+      Scaffold.of(context).showSnackBar(snackBar);
+    } else {
+      await DialogUtils.showErrorDialog(
+          context: context, errorMessage: 'Outlookの予定表に登録できませんでした。\n設定・ネットワーク接続状況をご確認ください。');
+    }
   }
 
   @override
@@ -144,7 +151,7 @@ class _PostChannelButtonState extends State<_PostChannelButton> {
     setState(() {
       _isPosting = true;
     });
-    String name = await showPostTeamsDialog(context: context);
+    String name = await DialogUtils.showPostTeamsDialog(context: context);
     if (name != null) {
       var responseBody = await MsGraph().postChannelMessage(plansModel, name);
       var resultText;
@@ -201,22 +208,21 @@ class _PostChannelButtonState extends State<_PostChannelButton> {
           throw e;
         }
 
-        resultText = 'Teamsに投稿しました。';
+        final snackBar = SnackBar(
+          content: Text('Teamsに投稿しました。'),
+          action: SnackBarAction(
+            label: '閉じる',
+            textColor: Colors.yellow,
+            onPressed: () {
+              Scaffold.of(context).hideCurrentSnackBar();
+            },
+          ),
+        );
+        Scaffold.of(context).showSnackBar(snackBar);
       } else {
-        resultText = 'Teamsへの投稿に失敗しました。';
+        await DialogUtils.showErrorDialog(
+            context: context, errorMessage: 'Teamsへの投稿に失敗しました。\n設定・ネットワーク接続状況をご確認ください。');
       }
-
-      final snackBar = SnackBar(
-        content: Text(resultText),
-        action: SnackBarAction(
-          label: '閉じる',
-          textColor: Colors.yellow,
-          onPressed: () {
-            Scaffold.of(context).hideCurrentSnackBar();
-          },
-        ),
-      );
-      Scaffold.of(context).showSnackBar(snackBar);
     }
     setState(() {
       _isPosting = false;

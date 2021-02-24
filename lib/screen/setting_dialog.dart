@@ -4,43 +4,19 @@ import 'dart:html';
 import 'package:flutter/material.dart';
 import 'package:kinkanutilapp/logic/cache.dart';
 
-Future<String> showSettingDialog({
-  @required BuildContext context,
-  TransitionBuilder builder,
-  bool useRootNavigator = true,
-  String title,
-  String body,
-  String input,
-  String inputHint,
-}) {
-  final Widget dialog = _SettingDialog(
-    title: title ?? "",
-    body: body ?? "",
-    input: input ?? "",
-    inputHint: inputHint ?? "",
-  );
-  return showDialog(
-    context: context,
-    useRootNavigator: useRootNavigator,
-    builder: (BuildContext context) {
-      return builder == null ? dialog : builder(context, dialog);
-    },
-  );
-}
-
-class _SettingDialog extends StatefulWidget {
+class SettingDialog extends StatefulWidget {
   final String title;
   final String body;
   final String input;
   final String inputHint;
 
-  _SettingDialog({this.title, this.body, this.input, this.inputHint});
+  SettingDialog({this.title, this.body, this.input, this.inputHint});
 
   @override
   State createState() => _SettingDialogState();
 }
 
-class _SettingDialogState extends State<_SettingDialog> {
+class _SettingDialogState extends State<SettingDialog> {
   TextEditingController _planDestinationController;
   TextEditingController _startEndDestinationController;
   ScrollController _scrollController = ScrollController();
