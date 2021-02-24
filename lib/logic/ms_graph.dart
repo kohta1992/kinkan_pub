@@ -81,24 +81,29 @@ class MsGraph {
     }
   }
 
-  postEvents(PlansModel plansModel) async {
+  Future<bool> postEvents(PlansModel plansModel) async {
     if (_oAuthCredential == null) {
       await authorise();
     }
 
     if (_oAuthCredential == null) {
-      return;
+      return false;
     }
 
     var accessToken = _oAuthCredential.accessToken;
 
     for (var plan in plansModel.plans) {
-      await postEvent(
+      bool isSuccess = await postEvent(
           token: accessToken,
           subject: plan.getSubjectForOutlook(plansModel.isTimeUnneeded),
           startDateTime: plan.getStartDateTimeForOutlook(),
           endDateTime: plan.getEndDateTimeForOutlook());
+
+      if (!isSuccess) {
+        return false;
+      }
     }
+    return true;
   }
 
   Future<Map> postChannelMessage(PlansModel plansModel, String name) async {

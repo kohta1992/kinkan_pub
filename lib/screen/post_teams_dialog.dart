@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
 
-Future<String> showPostTeamsDialog({
-  @required BuildContext context,
-  TransitionBuilder builder,
-  bool useRootNavigator = true,
-}) {
-  final Widget dialog = _PostTeamsDialog();
-  return showDialog(
-    context: context,
-    useRootNavigator: useRootNavigator,
-    builder: (BuildContext context) {
-      return builder == null ? dialog : builder(context, dialog);
-    },
-  );
-}
-
-class _PostTeamsDialog extends StatefulWidget {
+class PostTeamsDialog extends StatefulWidget {
   @override
   State createState() => _PostTeamsDialogState();
 }
 
-class _PostTeamsDialogState extends State<_PostTeamsDialog> {
+class _PostTeamsDialogState extends State<PostTeamsDialog> {
   final nameTextController = TextEditingController();
   @override
   Widget build(BuildContext context) {

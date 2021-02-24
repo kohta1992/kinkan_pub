@@ -141,8 +141,8 @@ class MyApp extends StatelessWidget {
                       color: Colors.white,
                       onPressed: () => showAboutDialog(
                         context: context,
-                        applicationName: 'Kinkan',
-                        applicationVersion: '1.2.0',
+                        applicationName: appTitle,
+                        applicationVersion: '1.2.1',
                       ),
                     ),
                   ],
