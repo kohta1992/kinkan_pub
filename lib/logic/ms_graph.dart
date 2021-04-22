@@ -53,8 +53,8 @@ class MsGraph {
       String body,
       @required String startDateTime,
       @required String endDateTime}) async {
-    final response = await http.post(
-        'https://graph.microsoft.com/v1.0/me/events',
+    var uri = Uri.https('graph.microsoft.com', '/v1.0/me/events');
+    final response = await http.post(uri,
         headers: {
           'Authorization': '$token',
           'Content-Type': 'application/json'
@@ -119,9 +119,10 @@ class MsGraph {
 
     String channelId = await Cache.getChannelId();
     String groupId = await Cache.getGroupId();
+    var uri = Uri.https('graph.microsoft.com',
+        '/v1.0/teams/$groupId/channels/$channelId/messages');
 
-    final response = await http.post(
-        'https://graph.microsoft.com/v1.0/teams/$groupId/channels/$channelId/messages',
+    final response = await http.post(uri,
         headers: {
           'Authorization': '$accessToken',
           'Content-Type': 'application/json'
@@ -161,9 +162,10 @@ class MsGraph {
 
     String channelId = await Cache.getChannelId();
     String groupId = await Cache.getGroupId();
+    var uri = Uri.https('graph.microsoft.com',
+        '/v1.0/teams/$groupId/channels/$channelId/messages/$messageId/replies');
 
-    final response = await http.post(
-        'https://graph.microsoft.com/v1.0/teams/$groupId/channels/$channelId/messages/$messageId/replies',
+    final response = await http.post(uri,
         headers: {
           'Authorization': '$accessToken',
           'Content-Type': 'application/json'

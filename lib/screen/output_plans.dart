@@ -11,7 +11,7 @@ import 'package:kinkanutilapp/screen/post_teams_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'DialogUtils.dart';
+import 'dialog_utils.dart';
 
 class OutputPlans extends StatelessWidget {
   final bool isSmall;
@@ -60,6 +60,11 @@ class _OutlookButtonState extends State<_OutlookButton> {
   bool _isPosting = false;
 
   Future<void> _registerPlans(PlansModel plansModel) async {
+
+    if (!(await DialogUtils.showPostEventConfirmDialog(context: context))) {
+      return;
+    }
+
     setState(() {
       _isPosting = true;
     });

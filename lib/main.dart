@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kinkanutilapp/screen/users.dart';
 import 'package:provider/provider.dart';
+
 
 import 'logic/Cache.dart';
 import 'model/date_format_const.dart';
@@ -11,8 +14,37 @@ import 'model/plan.dart';
 import 'model/plans.dart';
 import 'screen/home.dart';
 
-void main() {
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message ${message.messageId}");
+}
+
+Future<void> main() async {
   initializeDateFormatting("ja_JP");
+
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  // Set the background messaging handler early on, as a named top-level function
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
   runApp(MyApp());
 }
 
@@ -20,6 +52,7 @@ final appTitle = 'Kinkan';
 
 class MyApp extends StatelessWidget {
   Future<void> init(PlansModel plansModel) async {
+
     String today = DateFormatConst.dateHyphen.format(DateTime.now());
     String startTime;
     DateTime startDateTime;
@@ -142,7 +175,7 @@ class MyApp extends StatelessWidget {
                       onPressed: () => showAboutDialog(
                         context: context,
                         applicationName: appTitle,
-                        applicationVersion: '1.2.1',
+                        applicationVersion: '1.2.3',
                       ),
                     ),
                   ],

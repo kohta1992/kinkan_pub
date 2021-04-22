@@ -10,7 +10,7 @@ import 'package:kinkanutilapp/model/plans.dart';
 import 'package:kinkanutilapp/repository/user_repository.dart';
 import 'package:provider/provider.dart';
 
-import 'DialogUtils.dart';
+import 'dialog_utils.dart';
 
 class Attendance extends StatelessWidget {
   final bool isSmall;

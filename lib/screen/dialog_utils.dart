@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kinkanutilapp/screen/post_event_confirm_dialog.dart';
 import 'package:kinkanutilapp/screen/post_teams_dialog.dart';
 import 'package:kinkanutilapp/screen/setting_dialog.dart';
 
@@ -88,4 +89,20 @@ class DialogUtils {
       },
     );
   }
+
+  static Future<bool> showPostEventConfirmDialog({
+    @required BuildContext context,
+    TransitionBuilder builder,
+    bool useRootNavigator = true,
+  }) {
+    final Widget dialog = PostEventConfirmDialog();
+    return showDialog(
+      context: context,
+      useRootNavigator: useRootNavigator,
+      builder: (BuildContext context) {
+        return builder == null ? dialog : builder(context, dialog);
+      },
+    );
+  }
+
 }

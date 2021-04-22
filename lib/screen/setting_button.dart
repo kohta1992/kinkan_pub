@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:kinkanutilapp/model/plans.dart';
-import 'package:kinkanutilapp/screen/DialogUtils.dart';
+import 'package:kinkanutilapp/screen/dialog_utils.dart';
 import 'package:kinkanutilapp/screen/setting_dialog.dart';
 import 'package:provider/provider.dart';
 
